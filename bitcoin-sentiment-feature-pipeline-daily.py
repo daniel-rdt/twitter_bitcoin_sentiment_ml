@@ -1,9 +1,8 @@
 import os
-from pickle import TRUE
 import modal
-from twitter_inference import tweets_preprocess_backfill
+from twitter_inference import tweets_preprocess_daily, scrape_tweets_daily, tweets_preprocess_backfill
 
-BACKFILL = True
+BACKFILL = False
 LOCAL = True
 
 if LOCAL == False:
@@ -46,8 +45,9 @@ def g():
                          parse_dates=['date'],
                         )
         twitter_df = tweets_preprocess_backfill(df)
-        # import bitcoin price data to match with tweets from previous day
-        bitcoin_df = pd.read_csv("project/twitter_bitcoin_sentiment_ml/bitcoin_bitstamp.csv", decimal=".", usecols=[
+        print(twitter_df)
+        # import bitcoin price data to match with tweets from that day
+        bitcoin_df = pd.read_csv('https://www.cryptodatadownload.com/cdd/Bitstamp_BTCEUR_d.csv', skiprows=1, decimal=".", usecols=[
                              "date",
                              "symbol",
                              "open",
@@ -57,25 +57,47 @@ def g():
                          parse_dates=['date'])
         # date to only be date, not time
         bitcoin_df.date = bitcoin_df.date.dt.floor('D')
-        bitcoin_df["Bitcoin_Fluctuation_nextday"] = np.where((bitcoin_df.open - bitcoin_df.close) < 0, "bearish", "bullish")
-        # subtract one day so when matching with tweets bitcoin fluctuation of next day will be the label for the tweets of a given day
-        bitcoin_df.date = bitcoin_df.date - timedelta(days=1)
+        bitcoin_df["Bitcoin_Fluctuation"] = np.where((bitcoin_df.open - bitcoin_df.close) < 0, "Bearish", "Bullish")
         bitcoin_df.set_index("date", inplace=True)
-        bitcoin_df_input = bitcoin_df[["Bitcoin_Fluctuation_nextday"]]
-        twitter_df.join(bitcoin_df_input)
-        print(twitter_df)
+        bitcoin_df_input = bitcoin_df[["Bitcoin_Fluctuation"]]
+        twitter_bitcoin_df = twitter_df.join(bitcoin_df_input)
+        print(twitter_bitcoin_df)
 
     # or use newly created passenger to add to feature group
-    # else:
-    #     twitter_df = tweets_preprocess_daily()
+    else:
 
-    # add to feature group
-    twitter_fg = fs.get_or_create_feature_group(
-        name="twitter_bitcoin_sentiment_model",
-        version=1,
-        primary_key=["aggregate_followers","subjectivity_mean","polarity_mean"], 
-        description="Twitter bitcoin sentiment dataset")
-    twitter_fg.insert(twitter_df, write_options={"wait_for_job" : False})
+        # scrape yesterdays tweets from users which have more than 500 000 followers
+        # tweets_df = scrape_tweets_daily()
+        tweets_df = pd.read_csv("project/twitter_bitcoin_sentiment_ml/Tomas_files/220103_tweets_bitcoin.csv", decimal=".",sep=";", index_col=0)
+
+        # iloc[0] to only select yesterday's tweets and not today's
+        twitter_df = tweets_preprocess_daily(tweets_df).iloc[[0]]
+
+        twitter_df.index = twitter_df.index.tz_convert(None)
+
+        # import bitcoin price data to match with tweets from that day
+        bitcoin_df = pd.read_csv('https://www.cryptodatadownload.com/cdd/Bitstamp_BTCEUR_d.csv', skiprows=1, decimal=".", usecols=[
+                             "date",
+                             "symbol",
+                             "open",
+                             "high",
+                             "low",
+                             "close"],
+                         parse_dates=['date'])
+        # date to only be date, not time
+        bitcoin_df.date = bitcoin_df.date.dt.floor('D')
+        bitcoin_df["Bitcoin_Fluctuation"] = np.where((bitcoin_df.open - bitcoin_df.close) < 0, "Bearish", "Bullish")
+        bitcoin_df.set_index("date", inplace=True)
+        bitcoin_df_input = bitcoin_df[["Bitcoin_Fluctuation"]]
+        twitter_bitcoin_df = twitter_df.join(bitcoin_df_input)
+        print(twitter_bitcoin_df)
+    # # add to feature group
+    # twitter_fg = fs.get_or_create_feature_group(
+    #     name="twitter_bitcoin_sentiment_model",
+    #     version=1,
+    #     primary_key=["aggregate_followers","subjectivity_mean","polarity_mean"], 
+    #     description="Twitter bitcoin sentiment dataset")
+    # twitter_fg.insert(twitter_df, write_options={"wait_for_job" : False})
 
 if __name__ == "__main__":
     if LOCAL == True :
