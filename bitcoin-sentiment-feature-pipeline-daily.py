@@ -64,8 +64,8 @@ def g():
     else:
         print("Started daily update. Scraping daily tweets from Bitstamp API...")
         # scrape yesterdays tweets from users which have more than 500 000 followers
-        # tweets_df = scrape_tweets_daily()
-        tweets_df = pd.read_csv("project/twitter_bitcoin_sentiment_ml/Tomas_files/220103_tweets_bitcoin.csv", decimal=".",sep=";", index_col=0)
+        tweets_df = scrape_tweets_daily()
+        # tweets_df = pd.read_csv("project/twitter_bitcoin_sentiment_ml/Tomas_files/220103_tweets_bitcoin.csv", decimal=".",sep=";", index_col=0)
         print("Finished scraping daily tweets. Starting preprocess...")
         # iloc[0] to only select yesterday's tweets and not today's
         twitter_df = tweets_preprocess_daily(tweets_df).iloc[[0]]
