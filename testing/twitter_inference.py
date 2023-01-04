@@ -10,19 +10,18 @@ from textblob import TextBlob
 def tweets_preprocess_backfill(df):
 
     # change datatype of date
-    df.date = pd.to_datetime(df.date, errors="coerce")
+    df.date = pd.to_datetime(df.date, utc=True)
 
     # drop nas
     df_clean = df.dropna()
     df_clean = df_clean.convert_dtypes()
     df_clean.user_followers = df_clean.user_followers.astype("float")
-    df_clean.user_verified = df_clean.user_verified.astype(bool)
     df_clean.sort_values("date")
 
     Tags = ["Giveaway","giveaway","Cashback","cashback","Airdrop","nft"]
     # clear tweets with hastags that suggest bots and spam
     for tag in Tags:
-        df_clean = df_clean[(df_clean['hashtags'].str.contains(tag)==False)&(df_clean['text'].str.contains(tag)==False)]
+        df_clean = df_clean[(df_clean['text'].str.contains(tag)==False)]
     
     # data preprocessing. Remove hashtags, usernames, mentions, emojis, links, Non-ASCII characters, email adresses and special characters from posts
     # apply all the text cleaning functions
@@ -184,69 +183,71 @@ import csv
 from datetime import datetime
 def scrape_tweets_daily():
 
-  # Read the config file
-  config = configparser.ConfigParser()
-  config.read('../../Twitter/config.ini')
+    # Read the config file
+    config = configparser.ConfigParser()
+    config.read('../../Twitter/config.ini')
 
-  # Read the values
-  api_key = config['twitter']['api_key']
-  api_key_secret = config['twitter']['api_key_secret']
-  access_token = config['twitter']['access_token']
-  access_token_secret = config['twitter']['access_token_secret']
+    # Read the values
+    api_key = config['twitter']['api_key']
+    api_key_secret = config['twitter']['api_key_secret']
+    access_token = config['twitter']['access_token']
+    access_token_secret = config['twitter']['access_token_secret']
 
-  # Authenticate
-  auth = tweepy.OAuthHandler(api_key, api_key_secret)
-  auth.set_access_token(access_token, access_token_secret)
-  # parameter wait_on_rate_limit=True waits when request limit is reached 
-  api = tweepy.API(auth, wait_on_rate_limit=True)
+    # Authenticate
+    auth = tweepy.OAuthHandler(api_key, api_key_secret)
+    auth.set_access_token(access_token, access_token_secret)
+    # parameter wait_on_rate_limit=True waits when request limit is reached 
+    api = tweepy.API(auth, wait_on_rate_limit=True)
 
-  columns = ['id', 'user_followers', 'date', 'text', 'hashtags']
+    columns = ['id', 'user_followers', 'date', 'text', 'hashtags']
 
-  now = datetime.now(tz=utc)
-  from dateutil.relativedelta import relativedelta
+    import pytz
+    utc=pytz.UTC
+    now = datetime.now(tz=utc)
 
-  # set the number of hours for historical tweet collection
-  delta = now - relativedelta(hours=24)
+    from dateutil.relativedelta import relativedelta
+    # set the number of hours for historical tweet collection
+    delta = now - relativedelta(hours=24)
 
-  data = []
-  df = pd.DataFrame(data, columns=columns)
-  request = 0
-  with open('../../scraped_tweets/all_accounts_more_than_10000.csv', newline='') as csvfile:
-      reader = csv.DictReader(csvfile)
-      r = 1
-      for row in reader:
-          value = int(row['followers'])
-          # get tweets from users which have more than 500 000 followers
-          if (value >= 500000): 
-              print(f"{r}. Next User: {row['id']}")
-              i= 1
-              # get two tweets from the user
-              limit = 2
-              repeat = 1
-              try:
-                  while(repeat == 1):
-                      data2 = []
-                      for tweet in tweepy.Cursor(api.user_timeline, id=row['id'], tweet_mode="extended").items(limit):
-                          request += 1
-                          if (tweet.created_at >= delta):
-                              textt = tweet.full_text.replace("\n", " " )
-                              data2.append([row['id'], row['followers'], tweet.created_at, textt, tweet.entities.get('hashtags')])
-                          latest = tweet.created_at    
-                          df2 = pd.DataFrame(data2, columns=columns)
-                          i +=1 
+    data = []
+    df = pd.DataFrame(data, columns=columns)
+    request = 0
+    with open('../../scraped_tweets/all_accounts_more_than_10000.csv', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        r = 1
+        for row in reader:
+            value = int(row['followers'])
+            # get tweets from users which have more than 500 000 followers
+            if (value >= 500000): 
+                print(f"{r}. Next User: {row['id']}")
+                i= 1
+                # get two tweets from the user
+                limit = 2
+                repeat = 1
+                try:
+                    while(repeat == 1):
+                        data2 = []
+                        for tweet in tweepy.Cursor(api.user_timeline, id=row['id'], tweet_mode="extended").items(limit):
+                            request += 1
+                            if (tweet.created_at >= delta):
+                                text = tweet.full_text.replace("\n", " " )
+                                data2.append([row['id'], row['followers'], tweet.created_at, text, tweet.entities.get('hashtags')])
+                            latest = tweet.created_at    
+                            df2 = pd.DataFrame(data2, columns=columns)
+                            i +=1 
 
-                      # if the last tweet was released in the predifined period, then get more tweets from the same user
-                      if(latest >= delta and limit < 32):
-                          limit+=10 
-                      else:
-                          frames = [df, df2]
-                          df = pd.concat(frames)
-                          #df2.to_csv('/content/gdrive/MyDrive/Twitter/daily.csv', mode='a', index=False, header=False)
-                          print(request)
-                          break
-              except tweepy.errors.TweepyException as e:
-                  pass
-              r+=1
+                        # if the last tweet was released in the predifined period, then get more tweets from the same user
+                        if(latest >= delta and limit < 32):
+                            limit+=10 
+                        else:
+                            frames = [df, df2]
+                            df = pd.concat(frames)
+                            #df2.to_csv('/content/gdrive/MyDrive/Twitter/daily.csv', mode='a', index=False, header=False)
+                            print(request)
+                            break
+                except tweepy.errors.TweepyException as e:
+                    pass
+                r+=1
 
-  df = df[(df['hashtags'].str.contains('Bitcoin')==True)|(df['text'].str.contains('Bitcoin')==True)|(df['hashtags'].str.contains('bitcoin')==True)|(df['text'].str.contains('bitcoin')==True)]
-  return df
+    df = df[(df['hashtags'].str.contains('Bitcoin')==True)|(df['text'].str.contains('Bitcoin')==True)|(df['hashtags'].str.contains('bitcoin')==True)|(df['text'].str.contains('bitcoin')==True)]
+    return df
