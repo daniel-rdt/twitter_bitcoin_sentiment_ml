@@ -177,15 +177,30 @@ def getPolarity(twt):
 # Daily tweet scraper
 
 # Importing the libraries
+import os
 import configparser
 import tweepy
 import csv
 from datetime import datetime
+import hopsworks
+# connect to Hopsworks
+project = hopsworks.login(api_key_value='U6PiDFwDVDQHP26X.XhXDZQ9QKiNwafhLh11PUntcyYW5Zp8aoXhoj1IJTGHDBu8owQJUKbFClHaehyMU')
+# connect to dataset API
+dataset_api = project.get_dataset_api()
+
 def scrape_tweets_daily():
 
+    # folder to load files into locally
+    if not os.path.exists("twitter_bitcoin_sentiment_assets"):
+        os.mkdir("twitter_bitcoin_sentiment_assets")
+
+    # load config file from hopsworks
+    downloaded_file_path = dataset_api.download(
+        "KTH_lab1_Training_Datasets/twitter_bitcoin_sentiment/config.ini", local_path="./twitter_bitcoin_sentiment_assets/", overwrite=True)
+    
     # Read the config file
     config = configparser.ConfigParser()
-    config.read('../../Twitter/config.ini')
+    config.read('./twitter_bitcoin_sentiment_assets/"config.ini')
 
     # Read the values
     api_key = config['twitter']['api_key']
@@ -212,7 +227,11 @@ def scrape_tweets_daily():
     data = []
     df = pd.DataFrame(data, columns=columns)
     request = 0
-    with open('../../scraped_tweets/all_accounts_more_than_10000.csv', newline='') as csvfile:
+
+    downloaded_file_path = dataset_api.download(
+        "KTH_lab1_Training_Datasets/twitter_bitcoin_sentiment/all_accounts_more_than_10000.csv", local_path="./twitter_bitcoin_sentiment_assets/", overwrite=True)
+    
+    with open("./twitter_bitcoin_sentiment_assets/all_accounts_more_than_10000.csv", newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         r = 1
         for row in reader:
