@@ -2,7 +2,7 @@ import os
 import modal
 from twitter_inference import tweets_preprocess_daily, scrape_tweets_daily, tweets_preprocess_backfill
 
-BACKFILL = True
+BACKFILL = False
 LOCAL = True
 
 if LOCAL == False:
@@ -24,13 +24,22 @@ def g():
     import time
     import configparser
 
-    project = hopsworks.login()
+    # connect to Hopsworks
+    project = hopsworks.login(api_key_value='U6PiDFwDVDQHP26X.XhXDZQ9QKiNwafhLh11PUntcyYW5Zp8aoXhoj1IJTGHDBu8owQJUKbFClHaehyMU')
+    # connect to feature store
     fs = project.get_feature_store()
+    # connect to dataset API
+    dataset_api = project.get_dataset_api()
 
     # either use prepped tweets dataset reaching back to 2016 to add to feature group
     if BACKFILL == True:
         print("Backfill started. Downloading twitter backfill file...")
-        df = pd.read_csv('project/scraped_tweets/tweets_influential_users.csv', sep=';', decimal='.', lineterminator='\n')
+        # load file from hopsworks api
+        if not os.path.exists("twitter_bitcoin_sentiment_assets"):
+            os.mkdir("twitter_bitcoin_sentiment_assets")
+        downloaded_file_path = dataset_api.download(
+            "KTH_lab1_Training_Datasets/twitter_bitcoin_sentiment/tweets_influential_users.csv", local_path="./twitter_bitcoin_sentiment_assets/", overwrite=True)
+        df = pd.read_csv("./twitter_bitcoin_sentiment_assets/tweets_influential_users.csv", sep=";", decimal=".",lineterminator='\n',usecols=['time', 'id', 'tweet','followers'], index_col='id')
         df = df.rename(columns={'time':'date','tweet':'text','followers':'user_followers'})
         print("Finished twitter backfill file download. Starting preprocess...")
         twitter_df = tweets_preprocess_backfill(df)
