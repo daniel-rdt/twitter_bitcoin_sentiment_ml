@@ -41,18 +41,7 @@ def tweets_preprocess_backfill(df):
     # date to only be date, not time
     df_influencers.date = df_influencers.date.dt.floor('D')
 
-    # extract sentiment from tweet text
-    # determine subjectivity and polarity of the tweets
-    df_influencers['subjectivity'] = df_influencers['new_text'].apply(getSubjectivity)
-    df_influencers['polarity'] = df_influencers['new_text'].apply(getPolarity)
-
-    # only select relevant features
-    df_final = df_influencers[["user_followers","date","new_text","subjectivity","polarity"]]
-    # group by days for test
-    d = {'user_followers':'aggregate_followers','subjectivity':'subjectivity_mean','polarity':'polarity_mean'}
-    df_input = df_final.groupby(pd.Grouper(key='date',freq='D')).agg({'user_followers':'sum','subjectivity':'mean','polarity':'mean'}).rename(columns=d).dropna()
-
-    return df_input
+    return df_influencers
 
 def tweets_preprocess_daily(df):
 
@@ -88,18 +77,7 @@ def tweets_preprocess_daily(df):
     # date to only be date, not time
     df_influencers.date = df_influencers.date.dt.floor('D')
 
-    # extract sentiment from tweet text
-    # determine subjectivity and polarity of the tweets
-    df_influencers['subjectivity'] = df_influencers['new_text'].apply(getSubjectivity)
-    df_influencers['polarity'] = df_influencers['new_text'].apply(getPolarity)
-
-    # only select relevant features
-    df_final = df_influencers[["user_followers","date","new_text","subjectivity","polarity"]]
-    # group by days for test
-    d = {'user_followers':'aggregate_followers','subjectivity':'subjectivity_mean','polarity':'polarity_mean'}
-    df_input = df_final.groupby(pd.Grouper(key='date',freq='D')).agg({'user_followers':'sum','subjectivity':'mean','polarity':'mean'}).rename(columns=d).dropna()
-
-    return df_input
+    return df_influencers
 
 ###### functions for text cleaning #####
 
@@ -160,16 +138,6 @@ def punct_removal(text):
 def special_removal(tweet):
   tweet = re.sub('([_]+)', "", tweet)
   return tweet
-
-##### functions for sentiment analysis #####
-
-# create a function to get the subjectivity
-def getSubjectivity(twt):
-    return TextBlob(twt).sentiment.subjectivity
-
-# create a function to get the polarity
-def getPolarity(twt):
-    return TextBlob(twt).sentiment.polarity
 
 
 
