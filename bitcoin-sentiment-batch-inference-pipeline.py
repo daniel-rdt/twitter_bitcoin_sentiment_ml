@@ -28,7 +28,7 @@ def g():
     
     # get model from model registry from hopswork
     mr = project.get_model_registry()
-    model = mr.get_model("twitter_bitcoin_sentiment", version=1)
+    model = mr.get_best_model("twitter_bitcoin_sentiment", 'accuracy', 'max')
     model_dir = model.download()
     model = joblib.load(model_dir + "/twitter_bitcoin_sentiment_model.pkl")
     
@@ -38,16 +38,16 @@ def g():
     
     # make prediction on whole batch data set (returns encoded label (le) that needs to be inverse transformed)
     y_pred_le = model.predict(batch_data)
-     # label encoder and transform
+    # label encoder and transform
     from sklearn import preprocessing
     le = preprocessing.LabelEncoder()
-    le.fit(['Bearish', 'Bullish'])
+    le.fit(['Bearish', 'Bullish','Neutral'])
     # print(list(le.classes_))
     y_pred = le.inverse_transform(y_pred_le)
     # print(y_pred)
     
     # determine outcome of the latest prediction and download the appropriate image from GitHub
-    fluctuation = y_pred[y_pred.size-1]
+    fluctuation = y_pred[-1]
     prediction_url = f"https://raw.githubusercontent.com/daniel-rdt/twitter_bitcoin_sentiment_ml/main/assets/{fluctuation}.jpg"
     
     # print the prediction in console
