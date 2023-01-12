@@ -5,7 +5,7 @@ LOCAL=True
 
 if LOCAL == False:
    stub = modal.Stub()
-   image = modal.Image.debian_slim().apt_install(["libgomp1"]).pip_install(["hopsworks", "seaborn", "joblib", "scikit-learn"])
+   image = modal.Image.debian_slim().apt_install(["libgomp1"]).pip_install(["hopsworks", "seaborn", "joblib", "scikit-learn","xgboost"])
 
    @stub.function(image=image, schedule=modal.Period(days=1), secret=modal.Secret.from_name("hopsworks-api-key"))
    def f():
@@ -54,7 +54,7 @@ def g():
     y_train_le = le.transform(y_train.values.ravel())
 
     # Train model with the sklearn API of xgBoost algorithm using our features (X_train) and our encoded labels (y_train_le)
-    
+
     # # First: Hyperparameter tuning using grid search cross validation
     # from sklearn.model_selection import GridSearchCV
     # # set ranges for hyperparamers 'learning_rate' (eta), 'max_depth', 'min_child_weight', 'n_estimators'
