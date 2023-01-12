@@ -5,7 +5,6 @@ import re
 import nltk
 from nltk.tokenize import RegexpTokenizer
 from emot.emo_unicode import UNICODE_EMOJI, EMOTICONS_EMO
-from textblob import TextBlob
 
 def tweets_preprocess_backfill(df):
 
@@ -21,7 +20,7 @@ def tweets_preprocess_backfill(df):
     Tags = ["Giveaway","giveaway","Cashback","cashback","Airdrop","nft"]
     # clear tweets with hastags that suggest bots and spam
     for tag in Tags:
-        df_clean = df_clean[(df_clean['text'].str.contains(tag)==False)]
+        df_clean = df_clean[(df_clean.text.str.contains(tag)==False)]
     
     # data preprocessing. Remove hashtags, usernames, mentions, emojis, links, Non-ASCII characters, email adresses and special characters from posts
     # apply all the text cleaning functions
@@ -57,7 +56,7 @@ def tweets_preprocess_daily(df):
     Tags = ["Giveaway","giveaway","Cashback","cashback","Airdrop","nft"]
     # clear tweets with hastags that suggest bots and spam
     for tag in Tags:
-        df_clean = df_clean[(df_clean['hashtags'].str.contains(tag)==False)&(df_clean['text'].str.contains(tag)==False)]
+        df_clean = df_clean[(df_clean.text.str.contains(tag)==False)]
     
     # data preprocessing. Remove hashtags, usernames, mentions, emojis, links, Non-ASCII characters, email adresses and special characters from posts
     # apply all the text cleaning functions
@@ -149,8 +148,9 @@ import os
 import configparser
 import tweepy
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 import hopsworks
+from tqdm import tqdm
 # connect to Hopsworks
 project = hopsworks.login(api_key_value='U6PiDFwDVDQHP26X.XhXDZQ9QKiNwafhLh11PUntcyYW5Zp8aoXhoj1IJTGHDBu8owQJUKbFClHaehyMU')
 # connect to dataset API
@@ -168,7 +168,7 @@ def scrape_tweets_daily():
     
     # Read the config file
     config = configparser.ConfigParser()
-    config.read('./twitter_bitcoin_sentiment_assets/"config.ini')
+    config.read('./twitter_bitcoin_sentiment_assets/config.ini')
 
     # Read the values
     api_key = config['twitter']['api_key']
@@ -187,10 +187,12 @@ def scrape_tweets_daily():
     import pytz
     utc=pytz.UTC
     now = datetime.now(tz=utc)
+    today = datetime.today()
 
     from dateutil.relativedelta import relativedelta
     # set the number of hours for historical tweet collection
     delta = now - relativedelta(hours=24)
+    yesterday = (today - timedelta(days=1)).date()
 
     data = []
     df = pd.DataFrame(data, columns=columns)
@@ -201,40 +203,34 @@ def scrape_tweets_daily():
     
     with open("./twitter_bitcoin_sentiment_assets/all_accounts_more_than_10000.csv", newline='') as csvfile:
         reader = csv.DictReader(csvfile)
-        r = 1
-        for row in reader:
+        print("Running through influential users...")
+        for row in tqdm(reader,total=9464):
             value = int(row['followers'])
             # get tweets from users which have more than 500 000 followers
             if (value >= 500000): 
-                print(f"{r}. Next User: {row['id']}")
-                i= 1
                 # get two tweets from the user
                 limit = 2
                 repeat = 1
                 try:
                     while(repeat == 1):
                         data2 = []
-                        for tweet in tweepy.Cursor(api.user_timeline, id=row['id'], tweet_mode="extended").items(limit):
+                        for tweet in tweepy.Cursor(api.user_timeline, user_id=row['id'], tweet_mode="extended").items(limit):
                             request += 1
-                            if (tweet.created_at >= delta):
+                            if (tweet.created_at.date() >= yesterday):
                                 text = tweet.full_text.replace("\n", " " )
                                 data2.append([row['id'], row['followers'], tweet.created_at, text, tweet.entities.get('hashtags')])
-                            latest = tweet.created_at    
+                            latest = tweet.created_at.date()    
                             df2 = pd.DataFrame(data2, columns=columns)
-                            i +=1 
 
                         # if the last tweet was released in the predifined period, then get more tweets from the same user
-                        if(latest >= delta and limit < 32):
+                        if(latest >= yesterday and limit < 32):
                             limit+=10 
                         else:
                             frames = [df, df2]
                             df = pd.concat(frames)
-                            #df2.to_csv('/content/gdrive/MyDrive/Twitter/daily.csv', mode='a', index=False, header=False)
-                            print(request)
                             break
                 except tweepy.errors.TweepyException as e:
                     pass
-                r+=1
 
     df = df[(df['hashtags'].str.contains('Bitcoin')==True)|(df['text'].str.contains('Bitcoin')==True)|(df['hashtags'].str.contains('bitcoin')==True)|(df['text'].str.contains('bitcoin')==True)]
     return df
