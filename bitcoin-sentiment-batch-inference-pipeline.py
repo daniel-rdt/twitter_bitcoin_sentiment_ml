@@ -59,12 +59,12 @@ def g():
     dataset_api = project.get_dataset_api()    
     dataset_api.upload("./latest_bitcoin_fluctuation_prediction.png", "Resources/images", overwrite=True)
     
-    # get feature group and get latest passenger
+    # get feature group and get yesterday's tweet and fluctuation data
     twitter_fg = fs.get_feature_group(name="twitter_bitcoin_sentiment", version=1)
     df = twitter_fg.read()
     # print(df.iloc[-1])
 
-    # determine actual label of passenger and download the appropriate image from GitHub
+    # determine actual label of yesterday's fluctuation and download the appropriate image from GitHub
     label = df.iloc[-1]["bitcoin_fluctuation"]
     label_url = f"https://raw.githubusercontent.com/daniel-rdt/twitter_bitcoin_sentiment_ml/main/assets/{label}.jpg"
     
@@ -110,14 +110,14 @@ def g():
     predictions = history_df[['prediction']]
     labels = history_df[['label']]
 
-    # Only create the confusion matrix when there are examples of both bearish and bullish behaviour predicted
+    # Only create the confusion matrix when there are examples of bearish, neutral and bullish behaviour predicted
     print("Number of different bitcoin fluctuation predictions to date: " + str(predictions.value_counts().count()))
-    if predictions.value_counts().count() == 2:
-        results = confusion_matrix(labels, predictions, labels=['Bearish', 'Bullish'])
+    if predictions.value_counts().count() == 3:
+        results = confusion_matrix(labels, predictions, labels=['Bearish', 'Bullish','Neutral'])
 
     
-        df_cm = pd.DataFrame(results, ['True Bearish', 'True Bullish'],
-                            ['Pred Bearish', 'Pred Bullish'])
+        df_cm = pd.DataFrame(results, ['True Bearish', 'True Bullish','True Neutral'],
+                            ['Pred Bearish', 'Pred Bullish','Pred Neutral'])
 
         cm = sns.heatmap(df_cm, annot=True, fmt='g')
         fig = cm.get_figure()
@@ -126,7 +126,7 @@ def g():
         dataset_api.upload("twitter_bitcoin_sentiment_predictions/confusion_matrix.png", "Resources/images", overwrite=True)
     else:
         print("You need 2 different bitcoin fluctuation predictions to create the confusion matrix.")
-        print("Run the batch inference pipeline more times until you get 2 different bitcoin fluctuation predictions") 
+        print("Run the batch inference pipeline more times until you get 3 different bitcoin fluctuation predictions") 
 
 
 if __name__ == "__main__":
