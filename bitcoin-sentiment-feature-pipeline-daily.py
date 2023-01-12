@@ -3,14 +3,14 @@ from unicodedata import decimal
 import modal
 from twitter_inference import tweets_preprocess_daily, scrape_tweets_daily, tweets_preprocess_backfill
 
-BACKFILL = True
-LOCAL = True
+BACKFILL = False
+LOCAL = False
 
 if LOCAL == False:
    stub = modal.Stub()
-   image = modal.Image.debian_slim().pip_install(["hopsworks==3.0.4","joblib","seaborn","sklearn","dataframe-image","tweepy","datetime","configparser","transformers"]) 
+   image = modal.Image.debian_slim().pip_install(["hopsworks==3.0.4","joblib","seaborn","sklearn","dataframe-image","tweepy","datetime","configparser","transformers","nltk","emot","tqdm","torch"]) 
 
-   @stub.function(image=image, schedule=modal.Period(days=1), secret=modal.Secret.from_name("hopsworks-api-key"))
+   @stub.function(image=image, timeout=3600, schedule=modal.Period(days=1), secret=modal.Secret.from_name("hopsworks-api-key"))
    def f():
        g()
 
@@ -24,7 +24,6 @@ def g():
     from datetime import date, timedelta
     import time
     import configparser
-    from textblob import TextBlob
 
 
     # connect to Hopsworks
@@ -33,16 +32,6 @@ def g():
     fs = project.get_feature_store()
     # connect to dataset API
     dataset_api = project.get_dataset_api()
-
-    ##### functions for sentiment analysis #####
-
-    # create a function to get the subjectivity
-    def getSubjectivity(twt):
-        return TextBlob(twt).sentiment.subjectivity
-
-    # create a function to get the polarity
-    def getPolarity(twt):
-        return TextBlob(twt).sentiment.polarity
 
     ##### Backfill #####
 
@@ -93,7 +82,7 @@ def g():
             # scores is [negative, neutral, positive]
             return scores
 
-        print("Running pipeline (this can take up to 2h or more)...")
+        print("Running pipeline (for larger datasets this can take up to 2h or more)...")
         twitter_df[['sentiment_score_negative','sentiment_score_neutral','sentiment_score_positive']] = pd.DataFrame(twitter_df.new_text.progress_apply(sentiment_analysis).tolist(), index= twitter_df.index)
         print("Pipeline finished!")
 
@@ -137,13 +126,15 @@ def g():
 
     # or update with new twitter and corresponding bitcoin fluctuation data from yesterday
     else:
-        print("Started daily update. Scraping daily tweets from Bitstamp API...")
+        print("Started daily update. Scraping daily tweets from Twitter API...")
         # scrape yesterdays tweets from users which have more than 500 000 followers
         tweets_df = scrape_tweets_daily()
-        # tweets_df = pd.read_csv("project/twitter_bitcoin_sentiment_ml/Tomas_files/220103_tweets_bitcoin.csv", decimal=".",sep=";", index_col=0)
+        # tweets_df.to_csv("project/twitter_bitcoin_sentiment_ml/Tomas_files/220110_tweets_bitcoin.csv", decimal=".",sep=";")
+        # tweets_df = pd.read_csv("project/twitter_bitcoin_sentiment_ml/Tomas_files/220110_tweets_bitcoin.csv", decimal=".",sep=";", index_col=0)
         print("Finished scraping daily tweets. Starting preprocess...")
-        # iloc[0] to only select yesterday's tweets and not today's
-        twitter_df = tweets_preprocess_daily(tweets_df).iloc[[0]]
+        print(tweets_df.head())
+        twitter_df = tweets_preprocess_daily(tweets_df)
+        print(twitter_df.head())
         print("Extracting tweet sentiment...")
         # extract sentiment from tweet text
         # set up pipe from huggingface transformer pipeline
@@ -178,16 +169,17 @@ def g():
             # scores is [negative, neutral, positive]
             return scores
 
-        print("Running pipeline (this can take up to 2h or more)...")
+        print("Running pipeline (for larger datasets this can take up to 2h or more)...")
         twitter_df[['sentiment_score_negative','sentiment_score_neutral','sentiment_score_positive']] = pd.DataFrame(twitter_df.new_text.progress_apply(sentiment_analysis).tolist(), index= twitter_df.index)
         print("Pipeline finished!")
 
-        twitter_df.to_csv("./twitter_bitcoin_sentiment_assets/checkpoint_with_sentiment.csv",sep=";",decimal=".")
         # only select relevant features
         twitter_df = twitter_df[["user_followers","date","new_text","sentiment_score_negative","sentiment_score_neutral","sentiment_score_positive"]]
         # group by days
         d = {'user_followers':'aggregate_followers','sentiment_score_negative':'sentiment_score_negative_mean','sentiment_score_neutral':'sentiment_score_neutral_mean','sentiment_score_positive':'sentiment_score_positive_mean'}
         twitter_df = twitter_df.groupby(pd.Grouper(key='date',freq='D')).agg({'user_followers':'sum','sentiment_score_negative':'mean','sentiment_score_neutral':'mean','sentiment_score_positive':'mean'}).rename(columns=d).dropna()
+        # iloc[0] to only select yesterday's tweets and not today's
+        twitter_df = twitter_df.iloc[[0]]
 
         try:
             twitter_df.index = twitter_df.index.tz_convert(None)
@@ -215,9 +207,9 @@ def g():
         print(f"Bitcoin fluctuations are:\nBearish: {counts[0]}\nNeutral: {counts[2]}\nBullish: {counts[1]}")
         bitcoin_df.set_index("date", inplace=True)
         bitcoin_df_input = bitcoin_df[["bitcoin_fluctuation"]]
-        twitter_bitcoin_df = twitter_df.merge(bitcoin_df_input, on='date')
+        twitter_df = twitter_df.merge(bitcoin_df_input, on='date')
         print("Merged with following snippet of final dataframe:")
-        print(twitter_bitcoin_df.head())
+        print(twitter_df.head())
     
     # add to feature group
     print("Pushing to feature group...")
