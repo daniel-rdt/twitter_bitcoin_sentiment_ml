@@ -1,7 +1,7 @@
 import os
 import modal
     
-LOCAL=True
+LOCAL=False
 
 if LOCAL == False:
    stub = modal.Stub()
@@ -125,8 +125,9 @@ def g():
         # save confusion matrix image to dataset api
         dataset_api.upload("twitter_bitcoin_sentiment_predictions/confusion_matrix.png", "Resources/images", overwrite=True)
     else:
-        print("You need 2 different bitcoin fluctuation predictions to create the confusion matrix.")
+        print("You need 3 different bitcoin fluctuation predictions to create the confusion matrix.")
         print("Run the batch inference pipeline more times until you get 3 different bitcoin fluctuation predictions") 
+    print("Batch inference finished.")
 
 
 if __name__ == "__main__":
