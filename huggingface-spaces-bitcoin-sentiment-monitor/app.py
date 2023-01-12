@@ -1,4 +1,5 @@
 import gradio as gr
+import imageio.v3 as iio
 from PIL import Image
 import hopsworks
 
@@ -12,20 +13,56 @@ dataset_api.download("Resources/images/latest_bitcoin_fluctuation_actual.png", o
 dataset_api.download("Resources/images/df_recent.png", overwrite=True)
 dataset_api.download("Resources/images/confusion_matrix.png", overwrite=True)
 
+def update():
+    dataset_api.download("Resources/images/latest_bitcoin_fluctuation_prediction.png", overwrite=True)
+    dataset_api.download("Resources/images/latest_bitcoin_fluctuation_actual.png", overwrite=True)
+    dataset_api.download("Resources/images/df_recent.png", overwrite=True)
+    dataset_api.download("Resources/images/confusion_matrix.png", overwrite=True)
+
+def update_fluctuation_prediction_img():
+    im_pred = iio.imread('latest_bitcoin_fluctuation_prediction.png')
+    return im_pred
+
+def update_actual_fluctuation_img():
+    im_act = iio.imread('latest_bitcoin_fluctuation_actual.png')
+    return im_act
+
+def update_df_recent_img():
+    im_hist = iio.imread('df_recent.png')
+    return im_hist
+
+def update_confusion_matrix_img():
+    im_matr = iio.imread('confusion_matrix.png')
+    return im_matr
+
 with gr.Blocks() as demo:
     with gr.Row():
-      with gr.Column():
-          gr.Label("Today's Predicted Image")
-          input_img = gr.Image("latest_bitcoin_fluctuation_prediction.png", elem_id="predicted-img")
-      with gr.Column():          
-          gr.Label("Today's Actual Image")
-          input_img = gr.Image("latest_bitcoin_fluctuation_actual.png", elem_id="actual-img")        
+        load=gr.Button("Load Images")
+        load.click(fn=update)
+    with gr.Row():
+        refresh=gr.Button("Refresh (wait 10 seconds after loading images before refreshing")
+        
     with gr.Row():
       with gr.Column():
-          gr.Label("Recent Prediction History")
-          input_img = gr.Image("df_recent.png", elem_id="recent-predictions")
+        gr.Label("Today's Predicted Image")
+        input_img_pred = gr.Image("latest_bitcoin_fluctuation_prediction.png", elem_id="predicted-img")
+        refresh.click(update_fluctuation_prediction_img,outputs=input_img_pred)
+
       with gr.Column():          
-          gr.Label("Confusion Maxtrix with Historical Prediction Performance")
-          input_img = gr.Image("confusion_matrix.png", elem_id="confusion-matrix")        
+        gr.Label("Today's Actual Image")
+        input_img_act = gr.Image("latest_bitcoin_fluctuation_actual.png", elem_id="actual-img")
+        refresh.click(update_actual_fluctuation_img,outputs=input_img_act)
+        
+    with gr.Row():
+      with gr.Column():
+        gr.Label("Recent Prediction History")
+        input_img_hist = gr.Image("df_recent.png", elem_id="recent-predictions")
+        refresh.click(update_df_recent_img,outputs=input_img_hist)
+
+      with gr.Column():          
+        gr.Label("Confusion Maxtrix with Historical Prediction Performance")
+        input_img_matr = gr.Image("confusion_matrix.png", elem_id="confusion-matrix")  
+        refresh.click(update_confusion_matrix_img,outputs=input_img_matr)
+      
 
 demo.launch()
