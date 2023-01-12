@@ -1,11 +1,11 @@
 import os
 import modal
     
-LOCAL=False
+LOCAL=True
 
 if LOCAL == False:
    stub = modal.Stub()
-   hopsworks_image = modal.Image.debian_slim().pip_install(["hopsworks==3.0.4","joblib","seaborn","scikit-learn","dataframe-image"])
+   hopsworks_image = modal.Image.debian_slim().pip_install(["hopsworks==3.0.4","joblib","seaborn","xgboost","scikit-learn","dataframe-image"])
    @stub.function(image=hopsworks_image, schedule=modal.Period(days=1), secret=modal.Secret.from_name("hopsworks-api-key"))
    def f():
        g()
@@ -51,7 +51,7 @@ def g():
     prediction_url = f"https://raw.githubusercontent.com/daniel-rdt/twitter_bitcoin_sentiment_ml/main/assets/{fluctuation}.jpg"
     
     # print the prediction in console
-    print(f"Predicted bitcoin fluctuation: {y_pred}")
+    print(f"Predicted bitcoin fluctuation: {fluctuation}")
 
     # save image in dataset api
     img = Image.open(requests.get(prediction_url, stream=True).raw)            
