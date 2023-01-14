@@ -47,7 +47,7 @@ Function tweets_preprocess_backfill is for backfill data preprocessing and tweet
 6. tweeets written by accounts which have less than 1000 followers were removed.
 7. tweet time were reduced to days.
 
-Function scrape_tweets_daily scrapes tweets from 9464 accounts which are in the .csv file. Due to certain API limitations in the beginning we take 2 tweets and if the second tweet is not from yesterday, we take again from the beginning 12 tweets from the same account timeline. If the 12th tweet is not from yesterday, we take again from the beginning 22 tweets from the same account timeline.If the 22th tweet is not from yesterday, we take again from the beginning 32 tweets from the same account timeline.
+Function scrape_tweets_daily scrapes tweets from 9464 accounts which are in the .csv file. Due to certain API limitations in the beginning we take 2 tweets and if the second tweet is not from yesterday, we take again from the beginning 12 tweets from the same account timeline. If the 12th tweet is not from yesterday, we take again from the beginning 22 tweets from the same account timeline. If the 22nd tweet is not from yesterday, we take again from the beginning 32 tweets from the same account timeline.
 
 We collect tweet creation date, tweet text and hashtags. 
 Also the script leaves those Tweets which have `Bitcoin` keyword.
@@ -55,7 +55,7 @@ Also the script leaves those Tweets which have `Bitcoin` keyword.
 ## Training Pipeline: bitcoin-sentiment-training-pipeline.py
 A classification algorithm XGBoost was applied. One day of tweet input data is aggregated into one input into the model yielding one prediction.
 To calculate the labels, Bitcoin market prices are used and opening and closing prices are compared to create either bullish, bearish or neutral label for Bitcoin behavior of the respective day.
-A number of times the model was ajusted, executed and the best hyperparameters were found. Fine-tuned model parameters: learning_rate: 0.01, max_depth: 3, min_child_weight: 1, n_estimators: 200.
+A number of times the model was adjusted, executed and the best hyperparameters were found. Fine-tuned model parameters: learning_rate: 0.01, max_depth: 3, min_child_weight: 1, n_estimators: 200.
 
 ## Batch Inference Pipeline: bitcoin-sentiment-batch-inference-pipeline.py
 - Can be run either locally or with MODAL on a daily schedule;
@@ -68,10 +68,10 @@ A number of times the model was ajusted, executed and the best hyperparameters w
 
 Folder contains main app for user interface and requirements.
 
-The UI Inference can be found here: ----------------------------------------------------------------------------------------
+The UI Inference can be found here: https://huggingface.co/spaces/daniel-rdt/twitter-bitcoin-sentiment
 
 The aim of the UI is to demonstrate past predictions in a table, confusion matrix, show today's actual and predicted bitcoin trend and also to show the bitcoin trend for the last 7 days. The refresh button is created to update results manualy.
 
 ## Results and final thoughts
-Overall the accuracy of the model is 56.1%. To improve this measure a bigger dataset of Twitter users and tweeets should be used. In addition, it is important to take in consideration Bitcoin graph technical analysis and stock market. For example, Bitcoin is tightly related to S&P500 index.
+Overall the accuracy of the model is 56.1%. To improve this measure a bigger dataset of Twitter users and tweeets should be used, especially over a longer period of time that experienced more bullish and bearish fluctuations. In addition, it is important to take in consideration Bitcoin graph technical analysis and stock market. For example, Bitcoin is tightly related to S&P500 index.
 The project took way longer to complete than we expected. The hardest part and the most time consuming was Twitter API because it took some time to get approval to use it from Twitter and because of API limitation. The dataset collection of Tweets and accounts were also very time consuming and took about few weeks. After getting all data everything else (feature engineering, training...) took about the same amount of time to complete. 
