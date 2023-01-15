@@ -24,7 +24,7 @@ Scripts:
 
 5.2.  huggingface-spaces-bitcoin-sentiment-monitor-2/app.py
 
-The feature and batch inference pipelines can either be run locally or using serverless compute platforms on a determined run-schedule such as Modal. The training pipeline should be run on demand. For scalability, the pipelines are separated and a feature store is utilized in the form of Hopsworks Feature Store. The predictions can be monitored using a public Huggingface App. Furthermore, two approaches were taken for the model tuning. Maximising accuracy and maximising F1-score, yielding very different results. Thus, both approaches were given a training and scheduled batch pipeline as well as a separate monitor on Huggingface.
+The feature and batch inference pipelines can either be run locally or using serverless compute platforms on a determined run-schedule such as Modal. The training pipeline should be run on demand. For scalability, the pipelines are separated and a feature store is utilized in the form of Hopsworks Feature Store. The predictions can be monitored using a public Huggingface App. Furthermore, two approaches were taken for the model tuning. Maximising accuracy and maximising F1-score, yielding very different results. Thus, both approaches were given a training and scheduled batch inference pipeline as well as a separate monitor on Huggingface.
 
 ## Influential accounts dataset
 
