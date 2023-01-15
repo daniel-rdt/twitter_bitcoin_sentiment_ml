@@ -9,12 +9,19 @@ The idea is to use tweets with mention of Bitcoin or respective synonyms and app
 
 Scripts:
 1.    bitcoin-sentiment-feature-pipeline-daily.py
+
 2.    twitter_inference.py (helper functions for inference with twitter data)
+
 3.1.  bitcoin-sentiment-training-pipeline.py
+
 3.2.  bitcoin-sentiment-training-pipeline-2.py
+
 4.1.  bitcoin-sentiment-batch-inference-pipeline.py
+
 4.2.  bitcoin-sentiment-batch-inference-pipeline-2.py
+
 5.1.  huggingface-spaces-bitcoin-sentiment-monitor/app.py
+
 5.2.  huggingface-spaces-bitcoin-sentiment-monitor-2/app.py
 
 The feature and batch inference pipelines can either be run locally or using serverless compute platforms on a determined run-schedule such as Modal. The training pipeline should be run on demand. For scalability, the pipelines are separated and a feature store is utilized in the form of Hopsworks Feature Store. The predictions can be monitored using a public Huggingface App. Furthermore, two approaches were taken for the model tuning. Maximising accuracy and maximising F1-score, yielding very different results. Thus, both approaches were given a training and scheduled batch pipeline as well as a separate monitor on Huggingface.
