@@ -62,7 +62,7 @@ We collect tweet creation date, tweet text and hashtags.
 Also the script only leaves those Tweets which have `Bitcoin`or related keyword.
 
 ## Training Pipelines: bitcoin-sentiment-training-pipeline.py, bitcoin-sentiment-training-pipeline-2.py
-A classification algorithm XGBoost was applied. One day of tweet input data was aggregated into one input into the model yielding one prediction.
+A XGBoost classification algorithm was applied. One day of tweet input data was aggregated into one input into the model yielding one prediction.
 To calculate the labels, Bitcoin market prices are used and opening and closing prices are compared to create either bullish, bearish or neutral label for Bitcoin behavior of the respective day.
 
 For hyperparamter tuning gridsearch cross validation was used on the following hyperparameters: learning rate (eta), number of estimators, max depth, minimum child weight. From this two different approaches were taken resulting in two separate models that both can be monitored on huggingface.
