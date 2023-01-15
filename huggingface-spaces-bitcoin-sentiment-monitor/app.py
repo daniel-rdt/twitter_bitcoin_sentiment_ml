@@ -40,7 +40,7 @@ with gr.Blocks() as demo:
         gr.Markdown(
           """
           # Bitcoin Twitter Sentiment Predictor Monitor v2
-          Model version build upon hyperparameter tuning for max. f-1 score.
+          Model version build upon hyperparameter tuning for max. accuracy score.
           """
           ) 
     with gr.Row():
