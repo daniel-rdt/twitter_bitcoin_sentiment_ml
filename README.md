@@ -44,7 +44,7 @@ The Bitstamp dataset includes historical OHLC price data on a daily, hourly, and
 
 In this work we assume that Bitcoin trend is bullish or bearish if the difference in opening and closing price is bigger or lower than 2 % accordingly. In other case it is neutral. This data is used as a labels.
 
-The prepared dataset is then aggregated to daily rows and uploaded to `Hopsworks` to be downloaded later in the training pipeline.
+The prepared dataset is then aggregated to daily sum (in case of the number of followers feature) and means (in case of the three sentiment score features) and uploaded to `Hopsworks` to be downloaded later in the training pipeline.
 
 ## twitter_inference.py
 Function tweets_preprocess_backfill is for backfill data preprocessing and tweets_preprocess_daily is for daily preprocessing. Feature engineering in those functions:
@@ -61,27 +61,30 @@ Function scrape_tweets_daily scrapes tweets from 9464 accounts which are in the 
 We collect tweet creation date, tweet text and hashtags. 
 Also the script only leaves those Tweets which have `Bitcoin`or related keyword.
 
-## Training Pipeline: bitcoin-sentiment-training-pipeline.py
+## Training Pipelines: bitcoin-sentiment-training-pipeline.py, bitcoin-sentiment-training-pipeline-2.py
 A classification algorithm XGBoost was applied. One day of tweet input data was aggregated into one input into the model yielding one prediction.
 To calculate the labels, Bitcoin market prices are used and opening and closing prices are compared to create either bullish, bearish or neutral label for Bitcoin behavior of the respective day.
 
-A number of times the model was adjusted, executed and the best hyperparameters were found. Fine-tuned model parameters: learning_rate: 0.01, max_depth: 3, min_child_weight: 1, n_estimators: 200.
+For hyperparamter tuning gridsearch cross validation was used on the following hyperparameters: learning rate (eta), number of estimators, max depth, minimum child weight. From this two different approaches were taken resulting in two separate models that both can be monitored on huggingface.
+For one, gridsearch cross validation was applied for finding the set-up with best accuracy. The other model tuned to find the set-up with best f1-score to avoid the model being extremely biased towards one class. The fine-tuned model parameters for the first (accuracy model) are: learning_rate: 0.01, max_depth: 3, min_child_weight: 1, n_estimators: 200. The fine-tuned model parameters for the second (f1 model) are: learning_rate: 0.03, max_depth: 5, min_child_weight: 0.1, n_estimators: 1500.
 
-## Batch Inference Pipeline: bitcoin-sentiment-batch-inference-pipeline.py
+## Batch Inference Pipelines: bitcoin-sentiment-batch-inference-pipeline.py, bitcoin-sentiment-batch-inference-pipeline-2.py
 - Can be run either locally or with MODAL on a daily schedule;
 - gets model from Hopsworks registry and batch data from feature view;
 - predicts if the Bitcoin trend is bullish, bearish or neutral;
-- downloads appropriate images for prediction and creates up to date confusion matrix when there have been 3 predictions made to date;
+- downloads appropriate images for prediction and creates up to date confusion matrix when there have been a meaningful number of predictions made to date;
 - stores predictions to Hopsworks;
 
 ## UI Inference: huggingface-spaces-bitcoin-sentiment-monitor/app.py
 
 Folder contains main app for user interface and requirements.
 
-The UI Inference can be found here: https://huggingface.co/spaces/daniel-rdt/twitter-bitcoin-sentiment
+The Monitoring UI of the accuracy model can be found here: https://huggingface.co/spaces/daniel-rdt/twitter-bitcoin-sentiment
 
-The aim of the UI is to demonstrate past predictions in a table, confusion matrix, show today's actual and predicted bitcoin trend and also to show the bitcoin trend for the last 7 days. The refresh button is created to update results manualy.
+The Monitoring UI of the f1 model can be found here: https://huggingface.co/spaces/daniel-rdt/twitter-bitcoin-sentiment-2 
+
+The aim of the UI is to demonstrate past predictions in a table, confusion matrix, show today's actual and predicted bitcoin trend and also to show the bitcoin trend for the last 7 days. The refresh button is created to update results manually.
 
 ## Results and final thoughts
-Overall the accuracy of the model is 59.1%. To improve this measure a bigger dataset of Twitter users and tweeets should be used, especially over a longer period of time that experienced more bullish and bearish fluctuations. In addition, it is important to take in consideration Bitcoin graph technical analysis and stock market. For example, Bitcoin is tightly related to S&P500 index.
+The accuracy of the model is 59.1%. However, this model shows to be very biased towards neutral fluctuation predictions. This can be explained by the training dataset that consists of the recent majorly neutral bahaviour of bitcoin. To improve on this a bigger dataset of Twitter users and tweeets should be used, especially over a longer period of time that experienced more bullish and bearish fluctuations. In addition, it is important to take in consideration Bitcoin graph technical analysis and stock market. For example, Bitcoin is tightly related to S&P500 index. The second model that was tuned for best f1-score reached a lower accuracy of 44.6%. However, it is not as skewed towards neutral predictions and thus shows a better f1 score than the first model with 40.7%. The model still suffers however, from hard to predict behaviour of bitcoin data and a largely homogeneous training and testing dataset with regards to lots of neutral fluctuation.
 The project took way longer to complete than we expected. The hardest part and the most time consuming was Twitter API because it took some time to get approval to use it from Twitter and because of API limitation. The dataset collection of Tweets and accounts were also very time consuming and took about few weeks. After getting all data everything else (feature engineering, training...) took about the same amount of time to complete. 
