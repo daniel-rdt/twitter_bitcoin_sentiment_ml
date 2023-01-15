@@ -37,7 +37,7 @@ We wrote the script to collect Tweet dataset. We ran that script over all the ac
 ## Feature Pipeline: bitcoin-sentiment-feature-pipeline-daily.py
 This file has backfill mode and inserts these functions from the helper function py-file twitter_inference.py: tweets_preprocess_daily, scrape_tweets_daily, tweets_preprocess_backfill
 It can be run either locally or with MODAL on a daily schedule.
-The tweets are preprocessed and a huggingface transformers model based on the large pre-trained language model roBERTa is applied to every Tweet's text. The text gets three scores: sentiment_positive, sentiment_negative, sentiment_neutral that are between 0 and 1 and add up to 1. The sentiment model used is `Twitter-roBERTa-base for Sentiment Analysis - UPDATED (2022)`and can be found here: https://huggingface.co/cardiffnlp/twitter-roberta-base-sentiment-latest
+The tweets are preprocessed and a huggingface transformers model based on the large pre-trained language model roBERTa is applied to every Tweet's text to extract the sentiment feature. Each text gets three scores: sentiment_positive, sentiment_negative, sentiment_neutral that are between 0 and 1 and add up to 1. The sentiment model used is `Twitter-roBERTa-base for Sentiment Analysis - UPDATED (2022)`and can be found here: https://huggingface.co/cardiffnlp/twitter-roberta-base-sentiment-latest
 
 The Bitcoin price data is used from Bitstamp exchange: https://www.cryptodatadownload.com/data/bitstamp/?fbclid=IwAR1k1Lbo-Bz6ocD85Y7ex17qcWs6bIpqnSZQbI3kTYyOBTmQWh9Hkt3Plf0#google_vignette.
 The Bitstamp dataset includes historical OHLC price data on a daily, hourly, and minute basis for the spot and physical market. The database is updated daily and is openly accessible.
