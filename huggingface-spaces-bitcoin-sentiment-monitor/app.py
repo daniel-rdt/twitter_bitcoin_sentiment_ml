@@ -37,6 +37,13 @@ def update_confusion_matrix_img():
 
 with gr.Blocks() as demo:
     with gr.Row():
+        gr.Markdown(
+          """
+          # Bitcoin Twitter Sentiment Predictor Monitor v2
+          Model version build upon hyperparameter tuning for max. f-1 score.
+          """
+          ) 
+    with gr.Row():
         load=gr.Button("Load Images")
         load.click(fn=update)
     with gr.Row():
