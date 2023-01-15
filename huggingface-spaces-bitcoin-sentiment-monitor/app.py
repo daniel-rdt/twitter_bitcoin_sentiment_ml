@@ -3,7 +3,7 @@ import imageio.v3 as iio
 from PIL import Image
 import hopsworks
 
-project = hopsworks.login()
+project = hopsworks.login(api_key_value='U6PiDFwDVDQHP26X.XhXDZQ9QKiNwafhLh11PUntcyYW5Zp8aoXhoj1IJTGHDBu8owQJUKbFClHaehyMU')
 fs = project.get_feature_store()
 
 dataset_api = project.get_dataset_api()
